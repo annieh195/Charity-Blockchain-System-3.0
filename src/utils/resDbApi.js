@@ -5,11 +5,11 @@ mutation{
       publicKey,
       privateKey
     }
-  }
-`;
+  }`;
+
 // this is the only way we can postTransaction
-export const POST_DONATION = (metadata, asset) => `mutation {
-    postTransaction(data: {
+export const POST_TRANSACTION = (metadata, asset) => `mutation {
+  postTransaction(data: {
     operation: "CREATE",
     amount: 1,
     signerPublicKey: "${metadata?.signerPublicKey}",
@@ -25,7 +25,7 @@ export const POST_DONATION = (metadata, asset) => `mutation {
   }`;
 
 // filter based on "signerPublicKey, recipientPublicKey"
-export const FETCH_DONATION = (signerPublicKey, recipientPublicKey) => `query { 
+export const FETCH_TRANSACTION = (signerPublicKey, recipientPublicKey) => `query { 
   getFilteredTransactions(filter: {
     ownerPublicKey:"${signerPublicKey}"
     recipientPublicKey:"${recipientPublicKey}"
@@ -39,11 +39,5 @@ export const FETCH_DONATION = (signerPublicKey, recipientPublicKey) => `query {
       type
       asset
       publicKey
-      
     }
   }`;
-
-// transaction id
-// donate title
-// donate amount
-// donate detail

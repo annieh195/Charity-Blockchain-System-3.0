@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "../css/DonationPage.css";
-import {
-  initWeb3,
-  donateToFund,
-  contractABI,
-  contractAddress,
-} from "../../services/Web3Client.js";
-
-import { POST_DONATION, FETCH_DONATION } from "../../utils/resDbApi.js";
+import { FETCH_TRANSACTION } from "../utils/resDbApi";
+import { sendRequest } from "../utils/resDbClient";
 
 function DonationPage() {
   const { charityName } = useParams(); // Getting the charity name from URL
@@ -17,11 +11,32 @@ function DonationPage() {
     description: "",
     targetAmount: 0,
   });
-  const [donations, setDonations] = useState([]);
-  const [donationInfo, setDonationInfo] = useState({ account: "", amount: 0 });
+
+  const [keys, setKeys] = useState({ publicKey: '', privateKey: '' });
 
   useEffect(() => {
-    initWeb3(); // Initialize Web3
+    const fetchKeys = async () => {
+      try {
+        const res = await sendRequest(GENERATE_KEYS);
+        setKeys({
+          publicKey: res.data.generateKeys.publicKey,
+          privateKey: res.data.generateKeys.privateKey
+        });
+      } catch (error) {
+        console.error("Failed to generate keys: ", error);
+      }
+    };
+    fetchKeys();
+  }, []);
+
+  const metadata = {
+    signerPublicKey: keys.publicKey,
+    signerPrivateKey: keys.privateKey,
+    recipientPublicKey: keys.recipientPublicKey,
+  };
+
+  const [donations, setDonations] = useState([]);
+  const [donationInfo, setDonationInfo] = useState({ account: "", amount: 0 });
 
     // Fetch charity information from LocalStorage
     const allCharities = JSON.parse(localStorage.getItem("charities")) || [];
@@ -42,6 +57,7 @@ function DonationPage() {
       });
     }
     const fetchDonations = async () => {
+      console.log("Fetching donation...", metadata);
       const response = await fetch("/api/donations");
       const data = await response.json();
       // Set state with fetched data
