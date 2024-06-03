@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "../css/DonationPage.css";
-import { FETCH_TRANSACTION } from "../utils/resDbApi";
-import { sendRequest } from "../utils/resDbClient";
+import { generateKeys, postTransaction, fetchTransactions } from "../../utils/resDbClient";
 
 function DonationPage() {
   const { charityName } = useParams(); // Getting the charity name from URL
@@ -12,83 +11,74 @@ function DonationPage() {
     targetAmount: 0,
   });
 
+  const [donations, setDonations] = useState([]);
+  const [donationAmount, setDonationAmount] = useState("");
   const [keys, setKeys] = useState({ publicKey: '', privateKey: '' });
 
   useEffect(() => {
-    const fetchKeys = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await sendRequest(GENERATE_KEYS);
+        const keys = await generateKeys();
         setKeys({
-          publicKey: res.data.generateKeys.publicKey,
-          privateKey: res.data.generateKeys.privateKey
+          publicKey: keys.generateKeys.publicKey,
+          privateKey: keys.generateKeys.privateKey
         });
+
+        // Fetch donations and donations for the charity for the charity from ResilientDB
+        const { charityData, donationsData } = await fetchCharityAndDonations(charityName);
+        setCharityInfo(charityData); 
+        setDonations(donationsData); 
       } catch (error) {
-        console.error("Failed to generate keys: ", error);
+        console.error("Error fetching data:", error);
       }
     };
-    fetchKeys();
-  }, []);
-
-  const metadata = {
-    signerPublicKey: keys.publicKey,
-    signerPrivateKey: keys.privateKey,
-    recipientPublicKey: keys.recipientPublicKey,
-  };
-
-  const [donations, setDonations] = useState([]);
-  const [donationInfo, setDonationInfo] = useState({ account: "", amount: 0 });
-
-    // Fetch charity information from LocalStorage
-    const allCharities = JSON.parse(localStorage.getItem("charities")) || [];
-    const foundCharity = allCharities.find(
-      (charity) => charity.name === charityName
-    );
-
-    const donationKey = `donations_${charityName}`;
-    const savedDonations = JSON.parse(localStorage.getItem(donationKey)) || [];
-    setDonations(savedDonations);
-
-    if (foundCharity) {
-      // Assuming that the charity's description and targetAmount are stored as well
-      setCharityInfo({
-        name: foundCharity.name,
-        description: foundCharity.description,
-        targetAmount: foundCharity.number,
-      });
-    }
-    const fetchDonations = async () => {
-      console.log("Fetching donation...", metadata);
-      const response = await fetch("/api/donations");
-      const data = await response.json();
-      // Set state with fetched data
-    };
-    fetchDonations();
+    fetchInitialData();
   }, [charityName]);
-  const [accountName, setAccountName] = useState("");
-  const [donationAmount, setDonationAmount] = useState("");
+
+  const fetchCharityAndDonations = async (charityName) => {
+    const res = await fetchTransactions(process.env.REACT_APP_ADMIN_PUBLIC_KEY, "");
+    const charityTransaction = res.getFilteredTransactions.find(
+      (transaction) => transaction.asset.data.name === charityName
+    );
+    
+    const charityData = {
+      name: charityTransaction.asset.data.name,
+      description: charityTransaction.asset.data.description,
+      targetAmount: charityTransaction.asset.data.charityamount,
+      publicKey: charityTransaction.publicKey,
+    };
+
+    const donationsData = res.getFilteredTransactions
+      .filter(transaction => transaction.metadata.signerPublicKey !== process.env.REACT_APP_ADMIN_PUBLIC_KEY)
+      .map(transaction => ({
+        name: transaction.metadata.signerPublicKey,
+        amount: transaction.amount,
+      }));
+
+    return { charityData, donationsData };
+  };
 
   const handleDonate = async () => {
     if (parseFloat(donationAmount) > 0) {
       if (totalAmount + Number(donationAmount) <= charityInfo.targetAmount) {
         try {
-          const fundIndex = 0;
-          const result = await donateToFund(fundIndex, donationAmount);
+          const metadata = {
+            signerPublicKey: keys.publicKey,
+            signerPrivateKey: keys.privateKey,
+            recipientPublicKey: process.env.REACT_APP_ADMIN_PUBLIC_KEY,
+          };
 
-          if (result.success) {
-            console.log("Donation made by account:", result.account);
-            console.log("Donation amount:", result.amount);
+          const asset = { name: keys.publicKey, amount: donationAmount };
 
-            const newDonation = { name: result.account, amount: result.amount };
-            const updatedDonations = [...donations, newDonation];
-            setDonations(updatedDonations);
+          const result = await postTransaction(metadata, asset);
+          if (result) {
+            console.log("Donation successful:", result);
 
-            // Define a unique key for the charity's donations
-            const donationKey = `donations_${charityName}`;
-
-            // Save to localStorage under the specific charity's key
-            localStorage.setItem(donationKey, JSON.stringify(updatedDonations));
-          } else {
-            console.log("Donation failed");
+            const newDonation = {
+              name: keys.publicKey,
+              amount: donationAmount
+            };
+            setDonations([...donations, newDonation]);
           }
         } catch (error) {
           console.error("Transaction failed:", error);
@@ -163,13 +153,4 @@ function DonationPage() {
   );
 }
 
-// start here
-// const DonationPage = () => {
-//   const handleClick = () => {
-
-//   }
-//   return (
-
-//   );
-// }
 export default DonationPage;
