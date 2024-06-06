@@ -1,0 +1,66 @@
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 100vh;
+  background-image: url('/stars.png'); /* Update the path to your background image */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+}
+
+.profile-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: -1;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 5px;
+}
+
+.profile-details {
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.profile-heading {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.profile-text {
+  color: white;
+}
+
+.profile-divider {
+  margin-top: 4px;
+  border-color: white;
+}
+
+.profile-form-control {
+  margin-top: 4px;
+}
+
+.profile-footer {
+  margin-top: auto;
+  padding: 20px;
+  background: #282c34;
+  color: white;
+  text-align: center;
+  width: 100%;
+}
