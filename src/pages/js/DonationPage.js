@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "../css/DonationPage.css";
-import { generateKeys, postTransaction, fetchTransactions } from "../../utils/resDbClient";
+import { postTransaction, fetchTransactions } from "../../utils/resDbClient";
+import { getUserKeys, getAdminKeys } from "../../utils/configuration";
 
 function DonationPage() {
   const { charityName } = useParams(); // Getting the charity name from URL
@@ -13,21 +14,20 @@ function DonationPage() {
 
   const [donations, setDonations] = useState([]);
   const [donationAmount, setDonationAmount] = useState("");
-  const [keys, setKeys] = useState({ publicKey: '', privateKey: '' });
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const keys = await generateKeys();
-        setKeys({
-          publicKey: keys.generateKeys.publicKey,
-          privateKey: keys.generateKeys.privateKey
-        });
+        const adminKeys = getAdminKeys();
+
+        if (!adminKeys.publicKey) {
+          throw new Error("Admin public key is not defined");
+        }
 
         // Fetch donations and donations for the charity for the charity from ResilientDB
-        const { charityData, donationsData } = await fetchCharityAndDonations(charityName);
-        setCharityInfo(charityData); 
-        setDonations(donationsData); 
+        const { charityData, donationsData } = await fetchCharityAndDonations(charityName, adminKeys.publicKey);
+        setCharityInfo(charityData);
+        setDonations(donationsData);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -35,12 +35,16 @@ function DonationPage() {
     fetchInitialData();
   }, [charityName]);
 
-  const fetchCharityAndDonations = async (charityName) => {
-    const res = await fetchTransactions(process.env.REACT_APP_ADMIN_PUBLIC_KEY, "");
+  const fetchCharityAndDonations = async (charityName, adminPublicKey) => {
+    const res = await fetchTransactions(adminPublicKey, "");
     const charityTransaction = res.getFilteredTransactions.find(
       (transaction) => transaction.asset.data.name === charityName
     );
-    
+
+    if (!charityTransaction) {
+      throw new Error("Charity not found");
+    }
+
     const charityData = {
       name: charityTransaction.asset.data.name,
       description: charityTransaction.asset.data.description,
@@ -49,7 +53,7 @@ function DonationPage() {
     };
 
     const donationsData = res.getFilteredTransactions
-      .filter(transaction => transaction.metadata.signerPublicKey !== process.env.REACT_APP_ADMIN_PUBLIC_KEY)
+      .filter(transaction => transaction.metadata.signerPublicKey !== adminPublicKey)
       .map(transaction => ({
         name: transaction.metadata.signerPublicKey,
         amount: transaction.amount,
@@ -62,20 +66,27 @@ function DonationPage() {
     if (parseFloat(donationAmount) > 0) {
       if (totalAmount + Number(donationAmount) <= charityInfo.targetAmount) {
         try {
+          const userKeys = getUserKeys();
+          const adminKeys = getAdminKeys();
+
+          if (!adminKeys.publicKey) {
+            throw new Error("Admin public key is not defined");
+          }
+
           const metadata = {
             signerPublicKey: keys.publicKey,
             signerPrivateKey: keys.privateKey,
-            recipientPublicKey: process.env.REACT_APP_ADMIN_PUBLIC_KEY,
+            recipientPublicKey: adminKeyPair.publicKey,
           };
 
-          const asset = { name: keys.publicKey, amount: donationAmount };
+          const asset = { name: userKeys.publicKey, amount: donationAmount };
 
           const result = await postTransaction(metadata, asset);
           if (result) {
             console.log("Donation successful:", result);
 
             const newDonation = {
-              name: keys.publicKey,
+              name: userKeys.publicKey,
               amount: donationAmount
             };
             setDonations([...donations, newDonation]);
