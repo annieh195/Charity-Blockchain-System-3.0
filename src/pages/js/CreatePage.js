@@ -18,7 +18,7 @@ function CreatePage() {
     description: "",
   });
   const [keys, setKeys] = useState({ publicKey: "", privateKey: "" });
-
+  const [adminKeys, setAdminKeys] = useState({ publicKey: "", privateKey: "" });
   useEffect(() => {
     const fetchKeys = async () => {
       try {
@@ -26,6 +26,13 @@ function CreatePage() {
         setKeys({
           publicKey: keys.generateKeys.publicKey,
           privateKey: keys.generateKeys.privateKey,
+        });
+
+        // Generate admin keys
+        const adminKeyPair = await generateKeys();
+        setAdminKeys({
+          publicKey: adminKeyPair.generateKeys.publicKey,
+          privateKey: adminKeyPair.generateKeys.privateKey,
         });
       } catch (error) {
         console.error("Failed to generate keys: ", error);
@@ -51,11 +58,13 @@ function CreatePage() {
       // if (!recipientPublicKey) {
       //   throw new Error("REACT_APP_ADMIN_PUBLIC_KEY is not defined");
       // }
+      // const recipientPublicKey = process.env.REACT_APP_ADMIN_PUBLIC_KEY;
+      // console.log("key+++++", recipientPublicKey);
 
       const metadata = {
         signerPublicKey: keys.publicKey,
         signerPrivateKey: keys.privateKey,
-        recipientPublicKey: process.env.REACT_APP_ADMIN_PUBLIC_KEY,
+        recipientPublicKey: adminKeys.publicKey,
       };
       const asset = {
         name: charityInfo.name,
