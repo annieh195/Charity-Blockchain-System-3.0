@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Input,
@@ -7,9 +8,14 @@ import {
   FormControl,
   FormLabel,
 } from "@chakra-ui/react";
-import React, { useState, useEffect } from "react";
 import "../css/CreatePage.css";
 import { generateKeys, postTransaction } from "../../utils/resDbClient";
+import {
+  setUserKeys,
+  getUserKeys,
+  setAdminKeys,
+  getAdminKeys,
+} from "../../utils/configuration";
 
 function CreatePage() {
   const [charityInfo, setCharityInfo] = useState({
@@ -17,23 +23,25 @@ function CreatePage() {
     charityamount: 0,
     description: "",
   });
-  const [keys, setKeys] = useState({ publicKey: "", privateKey: "" });
-  const [adminKeys, setAdminKeys] = useState({ publicKey: "", privateKey: "" });
+
   useEffect(() => {
     const fetchKeys = async () => {
       try {
-        const keys = await generateKeys();
-        setKeys({
-          publicKey: keys.generateKeys.publicKey,
-          privateKey: keys.generateKeys.privateKey,
-        });
+        // Generate user keys
+        const userKeyPair = await generateKeys();
+        const userKeys = {
+          publicKey: userKeyPair.generateKeys.publicKey,
+          privateKey: userKeyPair.generateKeys.privateKey,
+        };
+        setUserKeys(userKeys);
 
         // Generate admin keys
         const adminKeyPair = await generateKeys();
-        setAdminKeys({
+        const adminKeys = {
           publicKey: adminKeyPair.generateKeys.publicKey,
           privateKey: adminKeyPair.generateKeys.privateKey,
-        });
+        };
+        setAdminKeys(adminKeys);
       } catch (error) {
         console.error("Failed to generate keys: ", error);
       }
@@ -50,28 +58,29 @@ function CreatePage() {
       alert("Please fill all the fields");
       return;
     }
+
     console.log("Creating fund:", charityInfo);
 
     try {
-      // check key
-      // const recipientPublicKey = process.env.REACT_APP_ADMIN_PUBLIC_KEY;
-      // if (!recipientPublicKey) {
-      //   throw new Error("REACT_APP_ADMIN_PUBLIC_KEY is not defined");
-      // }
-      // const recipientPublicKey = process.env.REACT_APP_ADMIN_PUBLIC_KEY;
-      // console.log("key+++++", recipientPublicKey);
+      const userKeys = getUserKeys();
+      const adminKeys = getAdminKeys();
+
+      if (!adminKeys.publicKey) {
+        throw new Error("Admin public key is not defined");
+      }
 
       const metadata = {
-        signerPublicKey: keys.publicKey,
-        signerPrivateKey: keys.privateKey,
+        signerPublicKey: userKeys.publicKey,
+        signerPrivateKey: userKeys.privateKey,
         recipientPublicKey: adminKeys.publicKey,
       };
+
       const asset = {
         name: charityInfo.name,
         charityamount: charityInfo.charityamount,
         description: charityInfo.description,
       };
-      // checkpt
+
       console.log("Metadata:", metadata);
       console.log("Asset:", asset);
 
@@ -82,6 +91,8 @@ function CreatePage() {
         console.log("Charity created successfully", result);
         setCharityInfo({ name: "", charityamount: 0, description: "" });
         alert("Charity fund created successfully!");
+      } else {
+        console.log("No result received from postTransaction");
       }
     } catch (error) {
       console.error("Error creating charity:", error);
