@@ -44,7 +44,14 @@ function CreatePage() {
       return;
     }
     console.log("Creating fund:", charityInfo);
+
     try {
+      // check key
+      // const recipientPublicKey = process.env.REACT_APP_ADMIN_PUBLIC_KEY;
+      // if (!recipientPublicKey) {
+      //   throw new Error("REACT_APP_ADMIN_PUBLIC_KEY is not defined");
+      // }
+
       const metadata = {
         signerPublicKey: keys.publicKey,
         signerPrivateKey: keys.privateKey,
@@ -55,7 +62,13 @@ function CreatePage() {
         charityamount: charityInfo.charityamount,
         description: charityInfo.description,
       };
+      // checkpt
+      console.log("Metadata:", metadata);
+      console.log("Asset:", asset);
+
       const result = await postTransaction(metadata, asset);
+      console.log("Result:", result);
+
       if (result) {
         console.log("Charity created successfully", result);
         setCharityInfo({ name: "", charityamount: 0, description: "" });

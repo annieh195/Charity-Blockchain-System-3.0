@@ -13,11 +13,12 @@ export const sendRequest = async (query) => {
   };
 
   const data = {
-    query: query
+    query: query,
   };
 
   try {
     const response = await axios.post(API_URL, data, { headers });
+    console.log("API Response:", response);
     return response.data.data;
   } catch (error) {
     console.error("Error in sending request to API: ", error);
@@ -31,10 +32,16 @@ export const generateKeys = async () => {
 
 export const postTransaction = async (metadata, asset) => {
   const query = POST_TRANSACTION(metadata, asset);
-  return await sendRequest(query);
+  console.log("GraphQL Query:", query);
+  const result = await sendRequest(query);
+  console.log("Post Transaction Result:", result);
+  return result;
 };
 
-export const fetchTransactions = async (signerPublicKey, recipientPublicKey) => {
+export const fetchTransactions = async (
+  signerPublicKey,
+  recipientPublicKey
+) => {
   const query = FETCH_TRANSACTION(signerPublicKey, recipientPublicKey);
   return await sendRequest(query);
 };
