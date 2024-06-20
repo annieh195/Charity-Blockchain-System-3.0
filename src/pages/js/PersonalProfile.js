@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, Container, Divider, Flex, FormControl, Heading, Image, Input, Text, Textarea, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Container,
+  Divider,
+  Flex,
+  FormControl,
+  Heading,
+  Image,
+  Input,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
+import { saveProfile, getProfile } from "../../utils/resDbClient";
 import NavBar from "./NavBar";
 
 function PersonalProfile() {
+  const [username, setUsername] = useState("your-username");
   const [name, setName] = useState("");
   const [profession, setProfession] = useState("");
   const [email, setEmail] = useState("");
@@ -11,26 +26,40 @@ function PersonalProfile() {
 
   // Load saved profile data from localStorage
   useEffect(() => {
-    const savedName = localStorage.getItem("name");
-    const savedProfession = localStorage.getItem("profession");
-    const savedEmail = localStorage.getItem("email");
-    const savedProfileText = localStorage.getItem("profileText");
-    const savedProfileImage = localStorage.getItem("profileImage");
+    const fetchProfile = async () => {
+      try {
+        const profile = await getProfile(username);
+        const { name, profession, email, profileText, profileImage } = profile.getProfile;
+        if (name) setName(name);
+        if (profession) setProfession(profession);
+        if (email) setEmail(email);
+        if (profileText) setProfileText(profileText);
+        if (profileImage) setProfileImage(profileImage);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
 
-    if (savedName) setName(savedName);
-    if (savedProfession) setProfession(savedProfession);
-    if (savedEmail) setEmail(savedEmail);
-    if (savedProfileText) setProfileText(savedProfileText);
-    if (savedProfileImage) setProfileImage(savedProfileImage);
-  }, []);
+    fetchProfile();
+  }, [username]);
 
-  const handleSaveProfile = () => {
-    localStorage.setItem("name", name);
-    localStorage.setItem("profession", profession);
-    localStorage.setItem("email", email);
-    localStorage.setItem("profileText", profileText);
-    localStorage.setItem("profileImage", profileImage);
-    alert("Profile information saved!");
+  const handleSaveProfile = async () => {
+    const profileData = {
+      username,
+      name,
+      profession,
+      email,
+      profileText,
+      profileImage,
+    };
+
+    try {
+      await saveProfile(profileData);
+      alert("Profile information saved!");
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("Failed to save profile information");
+    }
   };
 
   const handleImageChange = (e) => {
@@ -64,7 +93,7 @@ function PersonalProfile() {
           bottom={0}
           left={0}
           bg="black"
-          opacity="1.0"
+          opacity="0.7"
           zIndex={-1}
         />
 
@@ -86,10 +115,20 @@ function PersonalProfile() {
                 boxSize="150px"
                 mx="auto"
               />
-              <Input type="file" accept="image/*" onChange={handleImageChange} mt={2} />
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                mt={2}
+              />
             </Box>
 
-            <Box p={5} width={{ base: "100%", md: "50%" }} bg="rgba(0, 0, 0, 0.5)" borderRadius="lg">
+            <Box
+              p={5}
+              width={{ base: "100%", md: "50%" }}
+              bg="rgba(0, 0, 0, 0.5)"
+              borderRadius="lg"
+            >
               <FormControl>
                 <Input
                   type="text"
@@ -154,7 +193,7 @@ function PersonalProfile() {
           width="full"
         >
           <Text>
-            &copy; {new Date().getFullYear()} ByteCoin. All rights reserved.
+            &copy; {new Date().getFullYear()} Your Company. All rights reserved.
           </Text>
         </Box>
       </Flex>
