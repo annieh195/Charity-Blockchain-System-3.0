@@ -51,4 +51,37 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// Shuhao adds
+app.post('/saveProfile', async (req, res) => {
+    const { username, profile } = req.body;
+    try {
+        const users = JSON.parse(await fs.promises.readFile('users.json', 'utf8'));
+        if (!users[username]) {
+            return res.status(401).send('User does not exist');
+        }
+
+        users[username].profile = profile;
+        await fs.promises.writeFile('users.json', JSON.stringify(users, null, 2));
+        res.send('Profile saved successfully');
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post('/getProfile', async (req, res) => {
+    const { username } = req.body;
+    try {
+        const users = JSON.parse(await fs.promises.readFile('users.json', 'utf8'));
+        if (!users[username]) {
+            return res.status(401).send('User does not exist');
+        }
+
+        res.send(users[username].profile);
+    } catch (error) {
+        console.error('Error retrieving profile:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 app.listen(port, () => console.log(`Server running on http://localhost:${port}`));
