@@ -42,3 +42,29 @@ query {
     publicKey
   }
 }`;
+
+// Shuhao adds
+export const SAVE_PROFILE = (profileData) => `
+mutation {
+  saveProfile(
+    username: "${profileData.username}",
+    name: "${profileData.name}",
+    profession: "${profileData.profession}",
+    email: "${profileData.email}",
+    profileText: "${profileData.profileText}",
+    profileImage: "${profileData.profileImage}"
+  ) {
+    success
+  }
+}`;
+
+export const GET_PROFILE = (username) => `
+query {
+  getProfile(username: "${username}") {
+    name
+    profession
+    email
+    profileText
+    profileImage
+  }
+}`;
