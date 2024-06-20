@@ -1,5 +1,5 @@
 import axios from "axios";
-import { GENERATE_KEYS, POST_TRANSACTION, FETCH_TRANSACTION } from "./resDbApi";
+import { GENERATE_KEYS, POST_TRANSACTION, FETCH_TRANSACTION, SAVE_PROFILE, GET_PROFILE } from "./resDbApi";
 
 const API_URL = "https://cloud.resilientdb.com/graphql";
 
@@ -43,5 +43,17 @@ export const fetchTransactions = async (
   recipientPublicKey
 ) => {
   const query = FETCH_TRANSACTION(signerPublicKey, recipientPublicKey);
+  return await sendRequest(query);
+};
+
+
+// Shuhao adds
+export const saveProfile = async (profileData) => {
+  const query = SAVE_PROFILE(profileData);
+  return await sendRequest(query);
+};
+
+export const getProfile = async (username) => {
+  const query = GET_PROFILE(username);
   return await sendRequest(query);
 };
