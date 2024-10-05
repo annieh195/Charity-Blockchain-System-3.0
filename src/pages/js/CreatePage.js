@@ -25,6 +25,7 @@ function CreatePage() {
   });
 
   useEffect(() => {
+    console.log("Fetching keys");
     const fetchKeys = async () => {
       try {
         // Generate user keys
@@ -34,8 +35,14 @@ function CreatePage() {
           privateKey: userKeyPair.generateKeys.privateKey,
         };
         setUserKeys(userKeys);
+        console.log("Generating Signer's keys");
+        const keys = await generateKeys();
+        setKeys({
+          publicKey: keys.generateKeys.publicKey,
+          privateKey: keys.generateKeys.privateKey,
+        });
 
-        // Generate admin keys
+        console.log("Generating admin keys");
         const adminKeyPair = await generateKeys();
         const adminKeys = {
           publicKey: adminKeyPair.generateKeys.publicKey,
@@ -48,6 +55,9 @@ function CreatePage() {
     };
     fetchKeys();
   }, []);
+
+
+
 
   const createCharity = async () => {
     if (
@@ -68,13 +78,23 @@ function CreatePage() {
       if (!adminKeys.publicKey) {
         throw new Error("Admin public key is not defined");
       }
+      console.log("Checking key");
+      // check key
+      // const recipientPublicKey = process.env.REACT_APP_ADMIN_PUBLIC_KEY;
+      // if (!recipientPublicKey) {
+      //   throw new Error("REACT_APP_ADMIN_PUBLIC_KEY is not defined");
+      // }
+      // const recipientPublicKey = process.env.REACT_APP_ADMIN_PUBLIC_KEY;
+      // console.log("key+++++", recipientPublicKey);
 
+      console.log("Creating metadata");
       const metadata = {
         signerPublicKey: userKeys.publicKey,
         signerPrivateKey: userKeys.privateKey,
         recipientPublicKey: adminKeys.publicKey,
       };
 
+      console.log("Creating asset");
       const asset = {
         name: charityInfo.name,
         charityamount: charityInfo.charityamount,
@@ -84,8 +104,21 @@ function CreatePage() {
       console.log("Metadata:", metadata);
       console.log("Asset:", asset);
 
+      console.log("Posting transaction");
       const result = await postTransaction(metadata, asset);
       console.log("Result:", result);
+      console.log("Storing keys in local storage");
+
+      const existingCharities = JSON.parse(localStorage.getItem('charities')) || [];
+      existingCharities.push(charityInfo);
+      localStorage.setItem('charities', JSON.stringify(existingCharities));
+      if (localStorage.length > 0) {
+        console.log("Local storage is not empty:");
+        console.log(localStorage);
+      } else {
+        console.log("Local storage is empty");
+      }
+      
 
       if (result) {
         console.log("Charity created successfully", result);
