@@ -37,7 +37,7 @@ function CreatePage() {
         setUserKeys(userKeys);
         console.log("Generating Signer's keys");
         const keys = await generateKeys();
-        setKeys({
+        setUserKeys({
           publicKey: keys.generateKeys.publicKey,
           privateKey: keys.generateKeys.privateKey,
         });
